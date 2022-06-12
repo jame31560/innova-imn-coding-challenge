@@ -1,89 +1,89 @@
-from cgi import print_exception
-from pprint import pprint
 from model.employee import Employee
+import argparse
+import json
 
 
-def main():
-    req = [
-        {
-            "id": 1,
-            "first_name": "Dave",
-            "manager": 2,
-            "salary": 100000
-        },
-        {
-            "id": 2,
-            "first_name": "Jeff",
-            "manager": None,
-            "salary": 110000
-        },
-        {
-            "id": 3,
-            "first_name": "Andy",
-            "manager": 1,
-            "salary": 90000
-        },
-        {
-            "id": 4,
-            "first_name": "Jason",
-            "manager": 1,
-            "salary": 80000
-        },
-        {
-            "id": 5,
-            "first_name": "Dan",
-            "manager": 1,
-            "salary": 70000
-        },
-        {
-            "id": 6,
-            "first_name": "Rick",
-            "manager": 9,
-            "salary": 60000
-        },
-        {
-            "id": 9,
-            "first_name": "Suzanne",
-            "manager": 1,
-            "salary": 80000
-        }
-    ]
+def printEmployees(employeeList):
     try:
         employeeDict = dict()
-
-        topEmployees = list()
-
+        topEmployeeList = list()
         totalSalary = 0
 
-        for employee in req:
+        # Sort by employee first_name
+        employeeList.sort(key=lambda employee: employee["first_name"])
+
+        # Create each employee object and make a dict with key: id, Value: employee object
+        for employee in employeeList:
+            # New employee object
             newEmployee = Employee(
                 employee["id"], employee["first_name"], employee["salary"], employee["manager"]
             )
+            # Add salary
             totalSalary += newEmployee.salary
-            employeeDict[employee["id"]] = newEmployee
-            if newEmployee.manager is None:
-                topEmployees.append(newEmployee)
 
+            # Add employee to dict
+            employeeDict[employee["id"]] = newEmployee
+
+            # if employee manager is empty means it is the top level employee
+            if newEmployee.manager is None:
+                topEmployeeList.append(newEmployee)
+
+        # add each employee object to its manager's object
         for id in employeeDict:
             employee = employeeDict[id]
+            # if this employee doesn't have manager than pass.
             if employee.manager is None:
                 continue
+            # check if manager exist
+            if employee.manager not in employeeDict:
+                raise ValueError(
+                    "Manager id \"{}\" not found".format(employee.manager)
+                )
+            # Add self into manager's object
             manager = employeeDict[employee.manager]
-            if manager is None:
-                raise ValueError("Manager id \"%s\" not found" % manager)
             manager.addEmployee(employee)
 
-        # for id in employeeDict:
-        #     employee = employeeDict[id]
-        #     print(employee)
-        #     print(vars(employee))
-
-        for topEmployee in topEmployees:
+        # print employee detail from toplevel employees
+        for topEmployee in topEmployeeList:
             print(topEmployee.toStr())
-        print("Total salary: {}".format(totalSalary))
 
+        # Print the total salary
+        print("Total salary: {}".format(totalSalary))
     except Exception as e:
-        print_exception(e)
+        print(e)
+
+
+def main():
+    # get parameters
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-f", "--file",
+        type=str,
+        help="Employees data file. Default will open 'employees.json' in local directory.",
+        default="employees.json"
+    )
+    args = parser.parse_args()
+    config = vars(args)
+
+    try:
+        # open json file
+        file = open(config["file"])
+    except FileNotFoundError:
+        print("Can't not found '{}'".format(config["file"]))
+        return
+
+    try:
+        # read input
+        employeeList = json.load(file)
+    except:
+        print("Invalid JSON file")
+        file.close()
+        return
+
+    file.close()
+
+    # print employees
+    printEmployees(employeeList)
 
 
 if __name__ == '__main__':
