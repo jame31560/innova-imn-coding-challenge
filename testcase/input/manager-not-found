@@ -1,0 +1,8 @@
+[
+	{
+		"id": 1,
+		"first_name": "James",
+		"manager": 2,
+		"salary": 100000
+	}
+]

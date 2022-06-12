@@ -3,8 +3,12 @@ import argparse
 import json
 
 
-def printEmployees(employeeList):
+def employeesToStr(employeeList):
     try:
+        if type(employeeList) != list:
+            raise ValueError(
+                "Wrong type of employeeList input"
+            )
         employeeDict = dict()
         topEmployeeList = list()
         totalSalary = 0
@@ -20,6 +24,10 @@ def printEmployees(employeeList):
             )
             # Add salary
             totalSalary += newEmployee.salary
+
+            # check duplicat employee id
+            if employee["id"] in employeeDict:
+                raise ValueError("Duplicate employee id")
 
             # Add employee to dict
             employeeDict[employee["id"]] = newEmployee
@@ -43,14 +51,37 @@ def printEmployees(employeeList):
             manager = employeeDict[employee.manager]
             manager.addEmployee(employee)
 
+        result = ""
         # print employee detail from toplevel employees
         for topEmployee in topEmployeeList:
-            print(topEmployee.toStr())
+            result += topEmployee.toStr()
 
         # Print the total salary
-        print("Total salary: {}".format(totalSalary))
+        result += "Total salary: {}".format(totalSalary)
+        return result
     except Exception as e:
         print(e)
+        return ""
+
+
+def readEmployeesFromFile(filePath=""):
+    try:
+        # open json file
+        file = open(filePath)
+    except FileNotFoundError:
+        print("Can't not found '{}'".format(filePath))
+        return
+
+    try:
+        # read input
+        employeeList = json.load(file)
+    except:
+        print("Invalid JSON file")
+        file.close()
+        return
+
+    file.close()
+    return employeeList
 
 
 def main():
@@ -65,25 +96,10 @@ def main():
     args = parser.parse_args()
     config = vars(args)
 
-    try:
-        # open json file
-        file = open(config["file"])
-    except FileNotFoundError:
-        print("Can't not found '{}'".format(config["file"]))
-        return
-
-    try:
-        # read input
-        employeeList = json.load(file)
-    except:
-        print("Invalid JSON file")
-        file.close()
-        return
-
-    file.close()
+    employeeList = readEmployeesFromFile(config["file"])
 
     # print employees
-    printEmployees(employeeList)
+    print(employeesToStr(employeeList))
 
 
 if __name__ == '__main__':
